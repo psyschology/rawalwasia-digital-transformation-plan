@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demo - Rawalwasia Synapse OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- MOCK DATA & ASSETS ---
+        // This section simulates a comprehensive backend database for the Rawalwasia Group.
+        const mockData = {
+          user: {
+            name: 'Samir Agarwal',
+            role: 'Managing Director',
+            avatarUrl: `https://placehold.co/100x100/EBF4FF/004AAD?text=SA`,
+          },
+          kpis: [
+            { id: 1, title: 'Group Revenue (YTD)', value: '₹482.5 Cr', trend: 'up', change: '+5.2%', vertical: 'Group' },
+            { id: 2, title: 'Logistics TAT', value: '4.1 Days', trend: 'down', change: '-8.1%', vertical: 'Logistics' },
+            { id: 3, title: 'Solar Generation', value: '48.9 MW', trend: 'up', change: '+2.1%', vertical: 'Solar' },
+            { id: 4, title: 'Textile Order Volume', value: '1,288 Units', trend: 'up', change: '+11.4%', vertical: 'Textiles' },
+          ],
+          alerts: [
+            { id: 1, severity: 'critical', text: 'Indonesian coal import tariffs increase by 3% effective next week. Review impact on Q4 projections.', vertical: 'Coal' },
+            { id: 2, severity: 'warning', text: 'Fleet vehicle G-305 maintenance overdue by 7 days.', vertical: 'Logistics' },
+            { id: 3, severity: 'info', text: 'EU compliance audit for yarn exports scheduled for Oct 15th.', vertical: 'Textiles' },
+          ],
+          aiBriefing: "Good morning, Mr. Agarwal. Here's your briefing for September 21, 2025. **Key Win:** The Surat Solar Park Phase II project is now 3 days ahead of schedule after fast-tracking environmental clearances. **Focus Area:** Logistics costs are trending 4% above budget due to rising fuel prices; a mitigation strategy review is scheduled for Tuesday. **Decision Needed:** The Textiles division requires approval on the capital expenditure for new jacquard looms to meet rising export demand. One critical alert regarding coal tariffs requires your immediate attention.",
+          projects: [
+            { id: 'P01', title: 'Surat Solar Park Phase II', status: 'In Progress', vertical: 'Solar', progress: 75, team: ['AK', 'RS', 'PV'] },
+            { id: 'P02', title: 'Logistics Fleet GPS Upgrade', status: 'In Progress', vertical: 'Logistics', progress: 60, team: ['MJ', 'SK'] },
+            { id: 'P03', title: 'New Jacquard Loom Installation', status: 'To Do', vertical: 'Textiles', progress: 10, team: ['DP', 'RG'] },
+            { id: 'P04', title: 'Q4 Coal Sourcing Contracts', status: 'In Review', vertical: 'Coal', progress: 90, team: ['SA', 'VK'] },
+            { id: 'P05', title: 'EU Market Yarn Export Strategy', status: 'Done', vertical: 'Textiles', progress: 100, team: ['RG', 'DP'] },
+            { id: 'P06', title: 'Automated Warehouse Shelving', status: 'To Do', vertical: 'Logistics', progress: 0, team: ['MJ', 'SK'] },
+            { id: 'P07', title: 'Employee Performance Review System', status: 'In Progress', vertical: 'Group', progress: 50, team: ['HR Team'] },
+          ],
+          meetings: [
+            { id: 'M01', title: 'Weekly Executive Review', date: '2025-09-19', vertical: 'Group', status: 'Completed', aiSummary: 'Discussion focused on Solar Park progress and Logistics budget overruns. Key decision made to approve an additional 5% budget for logistics fuel costs, contingent on a 10% reduction in TAT by Q4 end. Action items assigned to Logistics and Finance heads.', actionItems: [{ id: 1, text: 'Draft revised Logistics budget.', owner: 'Finance Head', status: 'Done'}, { id: 2, text: 'Present TAT reduction plan.', owner: 'Logistics Head', status: 'In Progress' }] },
+            { id: 'M02', title: 'Textiles Export Strategy', date: '2025-09-22', vertical: 'Textiles', status: 'Upcoming', aiSummary: 'N/A', actionItems: [] },
+            { id: 'M03', title: 'Coal Tariff Impact Analysis', date: '2025-09-23', vertical: 'Coal', status: 'Upcoming', aiSummary: 'N/A', actionItems: [] },
+          ],
+          verticals: {
+            Textiles: { revenue: 180, opMargin: 18, kpi: 'Order Fulfillment Rate', kpiValue: '99.2%' },
+            Coal: { revenue: 155, opMargin: 22, kpi: 'Inventory Days', kpiValue: '28 Days' },
+            Solar: { revenue: 85, opMargin: 35, kpi: 'Energy Output vs. Target', kpiValue: '+4.5%' },
+            Logistics: { revenue: 62.5, opMargin: 12, kpi: 'On-Time Delivery Rate', kpiValue: '98.8%' },
+          },
+           sops: [
+            { id: 'SOP01', title: 'Group Employee Onboarding Protocol', version: '3.1', lastUpdated: '2025-08-15' },
+            { id: 'SOP02', title: 'Logistics Vehicle Safety & Maintenance Checklist', version: '2.5', lastUpdated: '2025-09-01' },
+            { id: 'SOP03', title: 'Capital Expenditure Approval Process', version: '4.0', lastUpdated: '2025-07-20' },
+          ],
+          reports: [
+            { id: 'R01', title: 'Q3-2025 Financial Performance Report', generated: '2025-10-05' },
+            { id: 'R02', title: 'Monthly Logistics Efficiency Analysis - September', generated: '2025-10-02' },
+          ]
+        };
+
+        // --- SVG ICONS ---
+        const Icons = {
+            dashboard: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>,
+            meetings: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3h2m-4 3h2m-4 3h2m-4 3h2"></path></svg>,
+            verticals: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>,
+            projects: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>,
+            reports: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>,
+            sops: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>,
+            logout: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>,
+            menu: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>,
+            close: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>,
+            up: <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>,
+            down: <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17l5-5m0 0l-5-5m5 5H6"></path></svg>,
+            critical: <svg className="w-5 h-5 text-red-500 flex-shrink-0 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>,
+            warning: <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>,
+            info: <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>,
+        };
+
+        // --- REACT COMPONENTS ---
+
+        const LoadingScreen = () => (
+            <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                    <h2 className="text-2xl font-semibold mt-4">Loading Synapse OS...</h2>
+                    <p className="text-gray-400">Authenticating & Preparing Command Center</p>
+                </div>
+            </div>
+        );
+
+        const LoginPage = ({ onLogin }) => {
+            const [email, setEmail] = React.useState('s.agarwal@rawalwasia.in');
+            const [password, setPassword] = React.useState('●●●●●●●●●●●●');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                onLogin();
+            };
+            
+            return (
+                <div className="min-h-screen bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                    <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+                        <h2 className="text-4xl font-extrabold text-white">Synapse OS</h2>
+                        <p className="mt-2 text-lg text-gray-400">Rawalwasia Group Command Center</p>
+                    </div>
+                    <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                        <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-lg sm:px-10">
+                            <form className="space-y-6" onSubmit={handleLogin}>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                                    <div className="mt-1">
+                                        <input id="email" name="email" type="email" value={email} readOnly className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-gray-100" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                                    <div className="mt-1">
+                                        <input id="password" name="password" type="password" value={password} readOnly className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-gray-100" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        Secure Sign In
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const KpiCard = ({ kpi }) => {
+            const TrendIcon = kpi.trend === 'up' ? Icons.up : Icons.down;
+            const trendColor = kpi.trend === 'up' ? 'text-green-600' : 'text-red-600';
+
+            return (
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <p className="text-sm font-medium text-gray-500">{kpi.title}</p>
+                    <div className="flex items-baseline justify-between mt-2">
+                        <p className="text-3xl font-bold text-gray-900">{kpi.value}</p>
+                        <div className={`flex items-center text-sm font-semibold ${trendColor}`}>
+                            {TrendIcon}
+                            <span>{kpi.change}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CommandCenterDashboard = () => {
+            const chartRef = React.useRef(null);
+
+            React.useEffect(() => {
+                const chartCtx = chartRef.current.getContext('2d');
+                const chart = new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Textiles', 'Coal', 'Solar', 'Logistics'],
+                        datasets: [{
+                            label: 'Revenue (in Cr)',
+                            data: [mockData.verticals.Textiles.revenue, mockData.verticals.Coal.revenue, mockData.verticals.Solar.revenue, mockData.verticals.Logistics.revenue],
+                            backgroundColor: ['#3b82f6', '#1f2937', '#f59e0b', '#10b981'],
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { display: false } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+                return () => chart.destroy();
+            }, []);
+            
+            const alertStyles = {
+                critical: "bg-red-50 border-red-200 text-red-800",
+                warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+                info: "bg-blue-50 border-blue-200 text-blue-800",
+            };
+
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Command Center</h1>
+                    <p className="text-gray-500 mt-1">Real-time overview of the Rawalwasia Group.</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                        {mockData.kpis.map(kpi => <KpiCard key={kpi.id} kpi={kpi} />)}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">AI Executive Briefing</h2>
+                            <p className="mt-2 text-gray-600">{mockData.aiBriefing}</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Critical Alerts</h2>
+                            <div className="space-y-3 mt-4">
+                                {mockData.alerts.map(alert => (
+                                     <div key={alert.id} className={`p-3 rounded-md border ${alertStyles[alert.severity]}`}>
+                                         <div className="flex items-start">
+                                             {Icons[alert.severity]}
+                                             <p className="text-sm font-medium">{alert.text}</p>
+                                         </div>
+                                     </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Vertical Revenue Distribution</h2>
+                            <div className="mt-4"><canvas ref={chartRef}></canvas></div>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Key Project Progress</h2>
+                             <div className="space-y-4 mt-4">
+                                {mockData.projects.slice(0,4).map(p => (
+                                    <div key={p.id}>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <p className="font-medium text-sm text-gray-700">{p.title}</p>
+                                            <p className="font-semibold text-sm text-gray-500">{p.progress}%</p>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${p.progress}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const MeetingsPage = () => {
+            const [selectedMeeting, setSelectedMeeting] = React.useState(mockData.meetings[0]);
+
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Strategy & Meetings</h1>
+                    <p className="text-gray-500 mt-1">Centralized repository for all strategic discussions and action items.</p>
+                    <div className="flex flex-col lg:flex-row gap-6 mt-6">
+                        <div className="lg:w-1/3">
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <h2 className="font-semibold mb-2">Meeting Schedule</h2>
+                                <div className="space-y-2">
+                                    {mockData.meetings.map(m => (
+                                        <button key={m.id} onClick={() => setSelectedMeeting(m)} className={`w-full text-left p-3 rounded-md ${selectedMeeting.id === m.id ? 'bg-blue-100' : 'hover:bg-gray-50'}`}>
+                                            <p className="font-semibold">{m.title}</p>
+                                            <p className="text-sm text-gray-500">{m.date} - {m.vertical}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="lg:w-2/3">
+                            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                {selectedMeeting ? (
+                                    <div>
+                                        <h2 className="text-2xl font-bold">{selectedMeeting.title}</h2>
+                                        <p className="text-gray-500">{selectedMeeting.date} | {selectedMeeting.vertical} | <span className={`font-semibold ${selectedMeeting.status === 'Completed' ? 'text-green-600' : 'text-yellow-600'}`}>{selectedMeeting.status}</span></p>
+
+                                        <div className="mt-6">
+                                            <h3 className="font-semibold text-lg">AI-Generated Summary</h3>
+                                            <p className="mt-2 text-gray-600 bg-gray-50 p-4 rounded-md border">{selectedMeeting.aiSummary}</p>
+                                        </div>
+
+                                        <div className="mt-6">
+                                            <h3 className="font-semibold text-lg">Action Items</h3>
+                                            {selectedMeeting.actionItems.length > 0 ? (
+                                                <div className="mt-2 space-y-3">
+                                                    {selectedMeeting.actionItems.map(item => (
+                                                        <div key={item.id} className="flex justify-between items-center p-3 border rounded-md">
+                                                            <div>
+                                                                <p className="font-medium">{item.text}</p>
+                                                                <p className="text-sm text-gray-500">Owner: {item.owner}</p>
+                                                            </div>
+                                                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${item.status === 'Done' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{item.status}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : <p className="mt-2 text-gray-500">No action items for this meeting.</p>}
+                                        </div>
+                                    </div>
+                                ) : <p>Select a meeting to view details.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProjectsKanban = () => {
+            const columns = ['To Do', 'In Progress', 'In Review', 'Done'];
+            const projectsByStatus = columns.map(status => mockData.projects.filter(p => p.status === status));
+
+            const getVerticalColor = (vertical) => {
+                const colors = {
+                    'Textiles': 'bg-pink-100 text-pink-800',
+                    'Coal': 'bg-gray-200 text-gray-800',
+                    'Solar': 'bg-yellow-100 text-yellow-800',
+                    'Logistics': 'bg-green-100 text-green-800',
+                    'Group': 'bg-blue-100 text-blue-800',
+                };
+                return colors[vertical] || 'bg-gray-100 text-gray-800';
+            }
+
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Projects Hub</h1>
+                    <p className="text-gray-500 mt-1">Visual overview of all major group initiatives.</p>
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {columns.map((col, index) => (
+                            <div key={col} className="bg-gray-100 rounded-lg p-4">
+                                <h2 className="font-semibold text-gray-800 text-lg mb-4">{col} <span className="text-sm font-normal text-gray-500">{projectsByStatus[index].length}</span></h2>
+                                <div className="space-y-4">
+                                    {projectsByStatus[index].map(project => (
+                                        <div key={project.id} className="bg-white p-4 rounded-md shadow-sm border">
+                                            <p className="font-semibold text-gray-800">{project.title}</p>
+                                            <span className={`mt-2 inline-block px-2 py-1 text-xs font-medium rounded-full ${getVerticalColor(project.vertical)}`}>{project.vertical}</span>
+                                            <div className="flex items-center justify-between mt-3">
+                                                <div className="flex -space-x-2">
+                                                    {project.team.map(member => (
+                                                        <div key={member} className="w-7 h-7 bg-gray-300 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 border-2 border-white">{member}</div>
+                                                    ))}
+                                                </div>
+                                                <span className="text-sm font-semibold">{project.progress}%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const VerticalsPage = () => {
+            const chartRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (chartRef.current) {
+                    const chartCtx = chartRef.current.getContext('2d');
+                    const chart = new Chart(chartCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(mockData.verticals),
+                            datasets: [{
+                                label: 'Operating Margin %',
+                                data: Object.values(mockData.verticals).map(v => v.opMargin),
+                                backgroundColor: ['#3b82f6', '#1f2937', '#f59e0b', '#10b981'],
+                                borderColor: '#ffffff',
+                                borderWidth: 4,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'right' },
+                                title: { display: true, text: 'Operating Margin by Vertical' }
+                            }
+                        }
+                    });
+                    return () => chart.destroy();
+                }
+            }, []);
+
+            const verticalColors = {
+                Textiles: 'border-pink-500',
+                Coal: 'border-gray-700',
+                Solar: 'border-yellow-500',
+                Logistics: 'border-green-500',
+            };
+
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Verticals Overview</h1>
+                    <p className="text-gray-500 mt-1">Deep-dive into the performance of each business division.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-6">
+                        {Object.entries(mockData.verticals).map(([name, data]) => (
+                            <div key={name} className={`bg-white p-6 rounded-lg shadow-sm border-t-4 ${verticalColors[name]}`}>
+                                <h2 className="text-2xl font-bold text-gray-800">{name}</h2>
+                                <div className="mt-4 space-y-3">
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="text-gray-500">Revenue (YTD)</span>
+                                        <span className="font-semibold text-lg">₹{data.revenue} Cr</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="text-gray-500">Operating Margin</span>
+                                        <span className="font-semibold text-lg">{data.opMargin}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="text-gray-500">{data.kpi}</span>
+                                        <span className="font-semibold text-lg">{data.kpiValue}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                         <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <h2 className="text-xl font-semibold text-gray-800">Operating Margin Comparison</h2>
+                            <div className="mx-auto max-w-sm">
+                                <canvas ref={chartRef}></canvas>
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm border">
+                            <h2 className="text-xl font-semibold text-gray-800">Recent Activity</h2>
+                            <ul className="mt-4 space-y-2 divide-y">
+                                <li className="pt-2">
+                                    <p className="font-medium text-sm">New contract signed for yarn export to Germany.</p>
+                                    <p className="text-xs text-gray-500">Vertical: Textiles | 2 hours ago</p>
+                                </li>
+                                 <li className="pt-2">
+                                    <p className="font-medium text-sm">Solar generation peaked at 50.2 MW during midday.</p>
+                                    <p className="text-xs text-gray-500">Vertical: Solar | 5 hours ago</p>
+                                </li>
+                                 <li className="pt-2">
+                                    <p className="font-medium text-sm">Logistics fleet G-210 completed Surat-Delhi route in record 48 hours.</p>
+                                    <p className="text-xs text-gray-500">Vertical: Logistics | 1 day ago</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportsPage = () => {
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">BI Reports</h1>
+                    <p className="text-gray-500 mt-1">Auto-generated Business Intelligence and Financial Reports.</p>
+                    <div className="mt-6 bg-white p-6 rounded-lg shadow-sm border">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="p-4 font-semibold">Report Title</th>
+                                    <th className="p-4 font-semibold">Date Generated</th>
+                                    <th className="p-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {mockData.reports.map(report => (
+                                    <tr key={report.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-4 font-medium text-gray-800">{report.title}</td>
+                                        <td className="p-4 text-gray-600">{report.generated}</td>
+                                        <td className="p-4 text-right">
+                                            <button className="font-semibold text-blue-600 hover:text-blue-800">Download PDF</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        const SopsPage = () => {
+            const [searchTerm, setSearchTerm] = React.useState('');
+            const filteredSops = mockData.sops.filter(sop => sop.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">SOP Library</h1>
+                    <p className="text-gray-500 mt-1">A single source of truth for all group-wide Standard Operating Procedures.</p>
+                    
+                    <div className="mt-6">
+                        <input 
+                            type="text" 
+                            placeholder="Search SOPs..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full max-w-md p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+
+                    <div className="mt-6 bg-white p-6 rounded-lg shadow-sm border">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="p-4 font-semibold">SOP Title</th>
+                                    <th className="p-4 font-semibold">Version</th>
+                                    <th className="p-4 font-semibold">Last Updated</th>
+                                    <th className="p-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredSops.map(sop => (
+                                    <tr key={sop.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-4 font-medium text-gray-800">{sop.title}</td>
+                                        <td className="p-4 text-gray-600">{sop.version}</td>
+                                        <td className="p-4 text-gray-600">{sop.lastUpdated}</td>
+                                        <td className="p-4 text-right">
+                                            <button className="font-semibold text-blue-600 hover:text-blue-800">View Document</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        const AppShell = ({ user, onLogout }) => {
+            const [currentPage, setCurrentPage] = React.useState('dashboard');
+            const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+
+            const navigation = [
+                { name: 'Command Center', page: 'dashboard', icon: Icons.dashboard },
+                { name: 'Strategy & Meetings', page: 'meetings', icon: Icons.meetings },
+                { name: 'Verticals Overview', page: 'verticals', icon: Icons.verticals },
+                { name: 'Projects Hub', page: 'projects', icon: Icons.projects },
+                { name: 'BI Reports', page: 'reports', icon: Icons.reports },
+                { name: 'SOP Library', page: 'sops', icon: Icons.sops },
+            ];
+            
+            const renderPage = () => {
+                switch (currentPage) {
+                    case 'dashboard': return <CommandCenterDashboard />;
+                    case 'meetings': return <MeetingsPage />;
+                    case 'projects': return <ProjectsKanban />;
+                    case 'verticals': return <VerticalsPage />;
+                    case 'reports': return <ReportsPage />;
+                    case 'sops': return <SopsPage />;
+                    default: return <CommandCenterDashboard />;
+                }
+            };
+            
+            const NavLink = ({ item }) => (
+                 <li>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(item.page); setSidebarOpen(false); }} 
+                       className={`flex items-center p-3 text-base font-normal rounded-lg transition-all duration-200 ${currentPage === item.page ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        {item.icon}
+                        <span className="ml-3">{item.name}</span>
+                    </a>
+                </li>
+            );
+
+            const sidebarContent = (
+                 <div className="flex flex-col h-full">
+                    <div className="text-center py-4 border-b">
+                        <h1 className="text-2xl font-bold text-gray-900">Synapse OS</h1>
+                        <p className="text-sm text-gray-500">Rawalwasia Group</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto py-4 px-3">
+                        <ul className="space-y-2">
+                            {navigation.map(item => <NavLink key={item.name} item={item} />)}
+                        </ul>
+                    </div>
+                    <div className="p-4 border-t">
+                        <div className="flex items-center">
+                            <img className="h-12 w-12 rounded-full" src={user.avatarUrl} alt="" />
+                            <div className="ml-3">
+                                <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                                <p className="text-xs text-gray-500">{user.role}</p>
+                            </div>
+                        </div>
+                         <button onClick={onLogout} className="w-full mt-4 flex items-center justify-center p-2 text-base font-normal text-red-600 rounded-lg hover:bg-red-50">
+                            {Icons.logout}
+                            <span className="ml-3">Logout</span>
+                         </button>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                     <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-white border-r transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+                        {sidebarContent}
+                     </aside>
+                     <div className="lg:ml-64">
+                        <header className="sticky top-0 bg-white/80 backdrop-blur-sm border-b p-4 flex justify-between items-center lg:hidden z-30">
+                             <h1 className="text-lg font-bold">Synapse OS</h1>
+                             <button onClick={() => setSidebarOpen(!isSidebarOpen)}>
+                                {isSidebarOpen ? Icons.close : Icons.menu}
+                             </button>
+                        </header>
+                        <main className="p-6">
+                            {renderPage()}
+                        </main>
+                     </div>
+                </div>
+            );
+        };
+
+        // Main App Component
+        function App() {
+            const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+            const [isLoading, setIsLoading] = React.useState(false);
+
+            const handleLogin = () => {
+                setIsLoading(true);
+                setTimeout(() => {
+                    setIsLoggedIn(true);
+                    setIsLoading(false);
+                }, 1500); // Simulate network delay
+            };
+
+            const handleLogout = () => {
+                setIsLoggedIn(false);
+            };
+
+            if (isLoading) {
+                return <LoadingScreen />;
+            }
+
+            if (!isLoggedIn) {
+                return <LoginPage onLogin={handleLogin} />;
+            }
+            
+            return <AppShell user={mockData.user} onLogout={handleLogout} />;
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
