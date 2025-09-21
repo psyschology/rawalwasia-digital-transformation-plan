@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Demo - Rawalwasia Group</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f5; }
+        .notion-app-shell { display: flex; height: 100vh; }
+        .notion-sidebar { width: 280px; background-color: #fbfbfb; border-right: 1px solid #edece9; }
+        .notion-main { flex: 1; overflow-y: auto; }
+        .notion-page { max-width: 900px; margin: 0 auto; padding: 48px; }
+        .notion-header-icon { font-size: 48px; line-height: 1; margin-bottom: 8px; }
+        .notion-h1 { font-size: 2.5rem; font-weight: 700; color: #37352f; margin-bottom: 16px; }
+        .notion-callout { background-color: #f1f1ef; border-radius: 4px; padding: 16px; display: flex; align-items: flex-start; margin-bottom: 24px; }
+        .notion-database-table { width: 100%; border-collapse: collapse; }
+        .notion-database-table th, .notion-database-table td { padding: 8px 12px; border-bottom: 1px solid #edece9; text-align: left; }
+        .notion-database-table th { font-weight: 500; color: #787774; font-size: 0.875rem; }
+        .notion-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+        .sidebar-link.active { background-color: #e3e3e1; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { background-color: white; border-radius: 8px; width: 90%; max-width: 960px; height: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { padding: 16px; border-bottom: 1px solid #edece9; text-align: right; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 48px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- MOCK DATA ---
+        const mockData = {
+          user: { name: 'Samir Agarwal', avatarUrl: `https://placehold.co/100x100/EBF4FF/004AAD?text=SA` },
+          aiBriefing: "Key updates this week: **Surat Solar Park Phase II** is on schedule. **Logistics** TAT decreased by 8%. **Textiles** reports a 5% increase in polyester yarn orders. One critical item requires your attention regarding Indonesian coal import duties.",
+          kpis: [
+            { title: 'Group Revenue (YTD)', value: '₹482.5 Cr', trend: '+5.2%' },
+            { title: 'Logistics On-Time %', value: '98.8%', trend: '+1.2%' },
+            { title: 'Solar Generation', value: '48.9 MW', trend: '+2.1%' },
+          ],
+          mdActionItems: [
+            { text: 'Approve new budget for fleet GPS upgrade (Logistics)', status: 'Overdue' },
+            { text: 'Review revised Indonesian coal import agreement (Coal)', status: 'Urgent' },
+            { text: 'Finalize director-level hiring for Solar division (HR)', status: 'Pending' },
+          ],
+          meetings: [
+            { id: 'M01', title: 'Q4 Logistics Strategy Review', vertical: 'Logistics', date: '2025-09-18', status: 'Done', summary: 'Approved new route optimization, TAT reduction target set at 10%. Budget for GPS upgrade needs MD approval.', actionItems: [{ text: 'Submit GPS upgrade budget', owner: 'Logistics Head', status: 'Done' }] },
+            { id: 'M02', title: 'Yarn Export Plan (EU Market)', vertical: 'Textiles', date: '2025-09-19', status: 'Done', summary: 'Finalized Q4 export targets for Germany and France. Need to address EU compliance audit scheduled for Oct 15th.', actionItems: [{ text: 'Prepare compliance documentation', owner: 'Compliance Team', status: 'In Progress' }] },
+            { id: 'M03', title: 'Coal Sourcing & Tariff Analysis', vertical: 'Coal', date: '2025-09-22', status: 'Upcoming', summary: '', actionItems: [] },
+          ],
+          projects: {
+              'Solar': [{ title: 'Surat Solar Park Phase II', status: 'On Track', lead: 'Anil Kumar' }],
+              'Logistics': [{ title: 'Fleet GPS Upgrade', status: 'Blocked', lead: 'M. Jain' }],
+              'Textiles': [{ title: 'New Jacquard Loom Installation', status: 'Planning', lead: 'D. Patel' }],
+              'Coal': [{ title: 'Q4 Sourcing Contracts', status: 'Finalizing', lead: 'V. Kumar' }],
+          },
+          sops: [
+            { title: 'Group Employee Onboarding Protocol', id: 'HR-001' },
+            { title: 'Capital Expenditure Approval Process', id: 'FIN-004' },
+            { title: 'Logistics Vehicle Safety Checklist', id: 'LOG-007' },
+          ]
+        };
+
+        // --- UTILITY COMPONENTS ---
+
+        const NotionTag = ({ text, color }) => {
+            const colors = {
+                blue: 'bg-blue-100 text-blue-800', green: 'bg-green-100 text-green-800',
+                red: 'bg-red-100 text-red-800', yellow: 'bg-yellow-100 text-yellow-800',
+                gray: 'bg-gray-200 text-gray-800',
+            };
+            return <span className={`notion-tag ${colors[color] || colors.gray}`}>{text}</span>;
+        };
+
+        const Modal = ({ children, onClose }) => (
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
+                    </div>
+                    <div className="modal-body">{children}</div>
+                </div>
+            </div>
+        );
+
+        // --- PAGE COMPONENTS ---
+
+        function MDDashboard() {
+            return (
+                <div className="notion-page">
+                    <div className="notion-header-icon">🏢</div>
+                    <h1 className="notion-h1">MD's Command Center</h1>
+
+                    <div className="notion-callout">
+                        <span className="mr-4 text-xl">💡</span>
+                        <div>
+                            <h3 className="font-semibold text-gray-800">AI-Generated Weekly Briefing</h3>
+                            <p className="text-gray-600">{mockData.aiBriefing}</p>
+                        </div>
+                    </div>
+
+                    <h2 className="text-2xl font-semibold mt-8 mb-4">Group-Wide KPIs</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {mockData.kpis.map(kpi => (
+                            <div key={kpi.title} className="bg-white p-4 rounded border border-gray-200">
+                                <p className="text-sm text-gray-500">{kpi.title}</p>
+                                <p className="text-3xl font-bold mt-1">{kpi.value}</p>
+                                <p className="text-sm font-medium text-green-600 mt-1">{kpi.trend}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <h2 className="text-2xl font-semibold mt-8 mb-4">Your Critical Action Items</h2>
+                    <div className="bg-white p-4 rounded border border-gray-200">
+                        {mockData.mdActionItems.map(item => (
+                             <div key={item.text} className="flex items-center justify-between py-2 border-b last:border-0">
+                                 <p>{item.text}</p>
+                                 <NotionTag text={item.status} color={item.status === 'Overdue' ? 'red' : item.status === 'Urgent' ? 'yellow' : 'gray'} />
+                             </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function MeetingsPage({ openMeetingModal }) {
+            return (
+                <div className="notion-page">
+                    <div className="notion-header-icon">🤝</div>
+                    <h1 className="notion-h1">Meetings Hub</h1>
+                    <p className="text-gray-600 mb-6">A single source of truth for all strategic discussions and their outcomes.</p>
+                    <table className="notion-database-table bg-white">
+                        <thead><tr><th>Meeting</th><th>Vertical</th><th>Date</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {mockData.meetings.map(meeting => (
+                                <tr key={meeting.id} onClick={() => openMeetingModal(meeting)} className="cursor-pointer hover:bg-gray-50">
+                                    <td className="font-semibold">{meeting.title}</td>
+                                    <td><NotionTag text={meeting.vertical} /></td>
+                                    <td>{meeting.date}</td>
+                                    <td><NotionTag text={meeting.status} color={meeting.status === 'Done' ? 'green' : 'yellow'} /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        function VerticalPage({ verticalName }) {
+            const icons = { 'Textiles': '🧵', 'Coal': '⚫️', 'Solar': '☀️', 'Logistics': '🚚'};
+            return (
+                <div className="notion-page">
+                    <div className="notion-header-icon">{icons[verticalName]}</div>
+                    <h1 className="notion-h1">{verticalName} Dashboard</h1>
+                    <h2 className="text-2xl font-semibold mt-8 mb-4">Key Projects</h2>
+                    <table className="notion-database-table bg-white">
+                        <thead><tr><th>Project Title</th><th>Status</th><th>Lead</th></tr></thead>
+                        <tbody>
+                            {mockData.projects[verticalName].map(p => (
+                                <tr key={p.title}>
+                                    <td className="font-semibold">{p.title}</td>
+                                    <td><NotionTag text={p.status} color={p.status === 'On Track' ? 'green' : 'red'}/></td>
+                                    <td>{p.lead}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                     <h2 className="text-2xl font-semibold mt-8 mb-4">Relevant SOPs</h2>
+                     <div className="bg-white p-4 rounded border border-gray-200 space-y-2">
+                        {mockData.sops.filter(s => s.title.includes(verticalName)).map(s => (
+                            <p key={s.id} className="p-2 bg-gray-50 rounded">{s.title}</p>
+                        ))}
+                        {verticalName === 'Textiles' && <p className="p-2 bg-gray-50 rounded">Yarn Quality Control Standards</p>}
+                     </div>
+                </div>
+            );
+        }
+
+        // --- MAIN APP SHELL ---
+        function App() {
+            const [currentPage, setCurrentPage] = useState('dashboard');
+            const [selectedMeeting, setSelectedMeeting] = useState(null);
+
+            const sidebarLinks = [
+                { id: 'dashboard', title: "MD's Command Center", icon: '🏢' },
+                { id: 'meetings', title: "Meetings Hub", icon: '🤝' },
+                { type: 'divider' },
+                { id: 'vertical_textiles', title: "Textiles", icon: '🧵' },
+                { id: 'vertical_coal', title: "Coal", icon: '⚫️' },
+                { id: 'vertical_solar', title: "Solar", icon: '☀️' },
+                { id: 'vertical_logistics', title: "Logistics", icon: '🚚' },
+            ];
+
+            const renderPage = () => {
+                if (currentPage.startsWith('vertical_')) {
+                    const verticalName = currentPage.split('_')[1].charAt(0).toUpperCase() + currentPage.split('_')[1].slice(1);
+                    return <VerticalPage verticalName={verticalName} />;
+                }
+                switch (currentPage) {
+                    case 'meetings': return <MeetingsPage openMeetingModal={setSelectedMeeting} />;
+                    case 'dashboard':
+                    default:
+                        return <MDDashboard />;
+                }
+            };
+            
+            return (
+                <div className="notion-app-shell">
+                    <aside className="notion-sidebar flex-shrink-0 flex flex-col">
+                        <div className="p-4 flex items-center">
+                            <img src={mockData.user.avatarUrl} className="w-8 h-8 rounded-full" />
+                            <span className="font-semibold ml-2 text-sm">Samir Agarwal's Notion</span>
+                        </div>
+                        <nav className="flex-1 p-2">
+                            {sidebarLinks.map((link, i) =>
+                                link.type === 'divider' ? <hr key={i} className="my-2 border-gray-200" /> : (
+                                <a href="#" key={link.id} onClick={(e) => { e.preventDefault(); setCurrentPage(link.id); }}
+                                   className={`sidebar-link flex items-center px-2 py-1.5 text-sm text-gray-700 rounded hover:bg-gray-100 ${currentPage === link.id ? 'active' : ''}`}>
+                                    <span className="w-6">{link.icon}</span>
+                                    <span>{link.title}</span>
+                                </a>
+                            ))}
+                        </nav>
+                    </aside>
+                    <main className="notion-main">
+                        {renderPage()}
+                    </main>
+
+                    {selectedMeeting && (
+                        <Modal onClose={() => setSelectedMeeting(null)}>
+                            <div className="notion-header-icon">🤝</div>
+                            <h1 className="notion-h1">{selectedMeeting.title}</h1>
+                            <div className="grid grid-cols-3 gap-4 mb-8 text-sm">
+                                <div><strong>Date:</strong> {selectedMeeting.date}</div>
+                                <div><strong>Vertical:</strong> <NotionTag text={selectedMeeting.vertical} /></div>
+                                <div><strong>Status:</strong> <NotionTag text={selectedMeeting.status} color="green" /></div>
+                            </div>
+
+                            <h2 className="text-xl font-semibold mb-2">AI-Generated Summary</h2>
+                            <div className="notion-callout !mb-8">
+                                <p>{selectedMeeting.summary}</p>
+                            </div>
+                            
+                            <h2 className="text-xl font-semibold mb-2">Action Items</h2>
+                            <table className="notion-database-table bg-white">
+                                <thead><tr><th>Task</th><th>Owner</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    {selectedMeeting.actionItems.map(item => (
+                                        <tr key={item.text}>
+                                            <td>{item.text}</td>
+                                            <td>{item.owner}</td>
+                                            <td><NotionTag text={item.status} color={item.status === 'Done' ? 'green' : 'yellow'} /></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </Modal>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
